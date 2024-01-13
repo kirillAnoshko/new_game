@@ -1,5 +1,30 @@
 import pygame
-import sys
+from random import randint
+
+GREEN = (0, 255, 0)
+ROWS = 50
+COLS = 50
+CELL_SIZE = 5
+
+
+class Cell:
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.content = None
+        self.image = pygame.Surface((CELL_SIZE, CELL_SIZE))
+        r = randint(0, 255)
+        g = randint(0, 255)
+        b = randint(0, 255)
+        self.image.fill((r, g, b))
+
+
+cells = [
+    [Cell(y=row, x=col) for col in range(COLS)]
+    for row in range(ROWS)
+]
+
 
 class Game:
     def __init__(self):
@@ -10,42 +35,35 @@ class Game:
         self.is_running = True
 
     def render(self):
-        self.rect = pygame.Rect(300, 200, 50, 50)
-        pygame.draw.rect(self.screen, (0, 255, 0), self.rect)
+        self.screen.fill((255, 255, 255))
+        for row in cells:
+            for cell in row:
+                r = randint(0, 255)
+                g = randint(0, 255)
+                b = randint(0, 255)
+                cell.image.fill((r, g, b))
+                self.screen.blit(cell.image, (cell.x * CELL_SIZE, cell.y * CELL_SIZE))
 
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.is_running = False
 
-    def move(self):
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    self.rect.y -= 15
-                if event.key == pygame.K_DOWN:
-                    self.rect.y += 15
-                if event.key == pygame.K_LEFT:
-                    self.rect.x -= 15
-                if event.key == pygame.K_RIGHT:
-                    self.rect.x += 15    
-
     def update(self):
-       pygame.display.update()
-    
+        pygame.display.update()
+
     def run(self):
         while self.is_running:
             self.handle_events()
             self.render()
-            self.move()
             self.update()
-            
+
             self.screen.fill((0, 0, 0))
 
             # Установка частоты кадров
             self.clock.tick(60)
-        pygame.quit()    
-    
+        pygame.quit()      
+
 # Создание экземпляра игры и запуск игрового цикла
 game = Game()
 game.run()
