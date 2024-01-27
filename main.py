@@ -1,6 +1,10 @@
 import pygame
 import sys
 import random
+import os
+
+current_dir = os.path.dirname(__file__)
+assets_dir = os.path.join(current_dir, 'assets')
 
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
@@ -9,8 +13,23 @@ NUM_CELLS_X = 12
 NUM_CELLS_Y = 12
 MAX_ANTHILLS = 4
 MIN_ANTHILLS = 1
-PLAYER_ICON = ".\assets\anteater.png"
+PLAYER_ICON = "P"
 ANTHILL_ICON = "A"
+ANT_ICON = os.path.join(assets_dir, 'Ant.png')
+
+
+class Ant:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y   
+
+    def move(self, dx, dy):
+        new_x = self.x + dx
+        new_y = self.y + dy
+        # Check if the new position is within bounds
+        if 0 <= new_x < NUM_CELLS_X and 0 <= new_y < NUM_CELLS_Y:
+            self.x = new_x
+            self.y = new_y
 
 
 class Anthill:
@@ -34,6 +53,21 @@ class Field:
         self.screen = screen
         self.player = Player()
         self.anthill = Anthill({(self.player.x, self.player.y)})
+        self.ants = [Ant(random.randint(1, NUM_CELLS_X - 2), random.randint(1, NUM_CELLS_Y - 2)) for _ in range(5)]
+
+    def generate_ant_positions(self):
+        ant_positions = set()
+        for anthill_position in self.anthill.positions:
+            possible_positions = [
+                (anthill_position[0] + 1, anthill_position[1]),
+                (anthill_position[0] - 1, anthill_position[1]),
+                (anthill_position[0], anthill_position[1] + 1),
+                (anthill_position[0], anthill_position[1] - 1)
+            ]
+            for pos in possible_positions:
+                if 0 < pos[0] < NUM_CELLS_X - 1 and 0 < pos[1] < NUM_CELLS_Y - 1 and pos not in ant_positions:
+                    ant_positions.add(pos)
+        return [Ant(x, y) for x, y in ant_positions]
 
     def render(self, offset_x, offset_y):
         for x in range(NUM_CELLS_X):
@@ -51,7 +85,7 @@ class Field:
 
                 self.screen.blit(cell_surface, cell_rect.topleft)
 
-        player_text = pygame.transform.scale(PLAYER_ICON, (CELL_SIZE, CELL_SIZE))
+        player_text = pygame.font.Font(None, CELL_SIZE).render(PLAYER_ICON, True, (0, 255, 0))
         player_rect = player_text.get_rect(
             center=(offset_x + (self.player.x + 0.5) * CELL_SIZE,
                     offset_y + (self.player.y + 0.5) * CELL_SIZE)
@@ -65,6 +99,18 @@ class Field:
                         offset_y + (position[1] + 0.5) * CELL_SIZE)
             )
             self.screen.blit(anthill_text, anthill_rect.topleft)
+
+        for ant in self.ants:
+            ant_text = pygame.transform.scale(ANT_ICON, (CELL_SIZE, CELL_SIZE))
+            ant_rect = ant_text.get_rect(
+                center=(offset_x + (ant.x + 0.5) * CELL_SIZE,
+                        offset_y + (ant.y + 0.5) * CELL_SIZE)
+            )
+            self.screen.blit(ant_text, ant_rect.topleft)
+
+    def update(self):
+        for ant in self.ants:
+            ant.move(random.choice([-1, 0, 1]), random.choice([-1, 0, 1]))
 
 
 class Player:
@@ -96,9 +142,9 @@ class Window:
 
     def run(self):
         while self.is_running:
-            self.clock.tick(60)
+            self.clock.tick(30)
             self.handle_events()
-            self.update()
+            self.field.update()
             self.render()
 
     def handle_events(self):
@@ -118,15 +164,13 @@ class Window:
                 elif event.key == pygame.K_RIGHT:
                     self.field.player.move(1, 0, anthill_positions)
 
-    def update(self):
-        pass
-
     def render(self):
         self.screen.fill((255, 255, 255))
         offset_x = (self.screen.get_width() - NUM_CELLS_X * CELL_SIZE) // 2
         offset_y = (self.screen.get_height() - NUM_CELLS_Y * CELL_SIZE) // 2
 
         self.field.render(offset_x, offset_y)
+        
 
         pygame.display.flip()
 
